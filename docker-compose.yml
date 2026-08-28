@@ -1,0 +1,30 @@
+services:
+  api:
+    image: loom-api
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    deploy:
+      resources:
+        reservations:
+            memory: 50M
+        limits:
+          memory: 100M
+    restart: unless-stopped
+    # Bound to loopback only - front with a reverse proxy for public access.
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      PORT: "3000"
+      DATABASE_URL: /app/data/loom.db
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required (>=32 chars)}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
+      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-7d}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+    volumes:
+      - sqlite_data:/app/data
+
+volumes:
+  sqlite_data:

@@ -1,0 +1,22 @@
+# Example Caddy config for Loom on a single domain.
+#
+# - /api/* is reverse-proxied to apps/api (running via docker-compose on :3000).
+# - Everything else is served as static files from the apps/web SPA build
+#   (`cd apps/web && bun run build`, then copy/rsync the `build/` dir to
+#   /srv/loom-web), falling back to /index.html for client-side routing.
+#
+# Copy this file to /etc/caddy/Caddyfile (or import it) and reload Caddy.
+
+loom.domain.com {
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3000
+	}
+
+	handle {
+		root * /srv/loom-web
+		try_files {path} /index.html
+		file_server
+	}
+
+	encode zstd gzip
+}
