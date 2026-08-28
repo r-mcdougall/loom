@@ -1,0 +1,99 @@
+name: CD (main)
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: r-mcdougall/loom-api
+  # Path on the VPS where this repo is checked out (docker-compose.yml lives
+  # there) — adjust if the deploy path differs.
+  DEPLOY_PATH: /srv/loom
+
+concurrency:
+  group: cd-main
+  cancel-in-progress: false
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.0"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build SvelteKit static SPA
+        working-directory: apps/web
+        run: bun run build
+
+      - name: Upload web build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: loom-web-build
+          path: apps/web/build
+          retention-days: 1
+
+  build-push-api:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push apps/api image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+  deploy:
+    needs: [build-web, build-push-api]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download web build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: loom-web-build
+          path: web-build
+
+      - name: Rsync web build to VPS
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          switches: -avzr --delete
+          path: web-build/
+          remote_path: /srv/loom-web/
+          remote_host: ${{ secrets.VPS_HOST }}
+          remote_user: ${{ secrets.VPS_USER }}
+          remote_key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Pull and restart apps/api on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd "${{ env.DEPLOY_PATH }}"
+            git pull
+            podman compose pull api
+            podman compose up -d
