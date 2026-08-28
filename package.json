@@ -1,0 +1,21 @@
+{
+  "name": "loom",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter='*' dev",
+    "dev:api": "bun run --filter=@loom/api dev",
+    "dev:web": "bun run --filter=@loom/web dev",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10"
+  }
+}

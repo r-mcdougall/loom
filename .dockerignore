@@ -1,0 +1,28 @@
+# Keep the build context small & reproducible.
+node_modules
+**/node_modules
+**/.svelte-kit
+**/dist
+**/build
+**/.turbo
+
+# Local data & secrets
+.env
+**/*.db
+**/*.db-*
+**/*.sqlite
+**/.env
+**/.env.*
+!**/.env.example
+
+# VCS / tooling / editor
+.git
+.gitignore
+**/.DS_Store
+**/*.log
+
+# Docker
+Dockerfile
+**/Dockerfile
+.dockerignore
+docker-compose.yml
