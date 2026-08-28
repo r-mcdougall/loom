@@ -1,6 +1,6 @@
 services:
   api:
-    image: loom-api
+    image: ghcr.io/r-mcdougall/loom-api:latest
     build:
       context: .
       dockerfile: apps/api/Dockerfile
