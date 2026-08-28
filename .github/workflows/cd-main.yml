@@ -95,6 +95,7 @@ jobs:
           script: |
             set -e
             cd "${{ env.API_DEPLOY_PATH }}"
+            git remote set-url origin git@github.com:r-mcdougall/loom.git
             git pull
             podman compose pull api
             podman compose up -d
