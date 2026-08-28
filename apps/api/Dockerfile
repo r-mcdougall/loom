@@ -4,7 +4,7 @@
 # Build context MUST be the repository root (workspace packages live in packages/):
 #   docker build -f apps/api/Dockerfile -t loom-api .
 
-FROM oven/bun:1-alpine AS base
+FROM docker.io/oven/bun:1-alpine AS base
 WORKDIR /app
 
 # ---------------------------------------------------------------------------
